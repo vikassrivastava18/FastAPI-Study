@@ -4,26 +4,14 @@ from typing import Annotated
 import jwt
 
 from fastapi import Depends, HTTPException, status, Security
-from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jwt.exceptions import InvalidTokenError
 from sqlmodel import select
-from deps import SessionDep
 from config import ALGORITHM, SECRET_KEY
 from pydantic import Field
 
-from db import User as UserModel
-
-
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-    }
-}
+from database import User as UserModel
+from dependencies import SessionDep, oauth2_scheme
 
 
 class Token(BaseModel):
@@ -55,8 +43,6 @@ class UserInDB(User):
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -71,13 +57,12 @@ def get_user(username: str, session: SessionDep):
     user = session.exec(statement).first()
     return user
 
-# statement = select(Hero).where(Hero.name == "Deadpond")
-# results = session.exec(statement)
 
 def authenticate_user(username: str, password: str, session: SessionDep):
     user = get_user(username, session)
     if not user:
         return False
+    print(password, user.hashed_password)
     if not verify_password(password, user.hashed_password):
         return False
     return user
@@ -95,7 +80,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 async def get_current_user(token: Annotated[str, Security(oauth2_scheme)], session: SessionDep):
-    print("Commiojg nw")
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
