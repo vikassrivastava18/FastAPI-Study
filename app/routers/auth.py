@@ -1,15 +1,13 @@
-from fastapi import APIRouter, HTTPException, status
+
+from fastapi import APIRouter
 from typing import Annotated
+
 from fastapi import Depends
+from utils.auth_utils import UserReg, get_current_user
 
-from fastapi.security import OAuth2PasswordRequestForm
-
-from config import ACCESS_TOKEN_EXPIRE_MINUTES
 from dependencies import SessionDep
 from database import  User
-from auth import Token, UserReg, authenticate_user, \
-                 create_access_token, get_current_active_user, \
-                 get_password_hash
+
 
 
 router = APIRouter(
@@ -23,14 +21,8 @@ router = APIRouter(
 @router.post("/create-user/")
 def create_user(user: UserReg, session: SessionDep) -> User:
     hashed_password = get_password_hash(user.password)
-    db_user = User(
-        username=user.username,
-        full_name=user.full_name,
-        email=user.email,
-        disabled=user.disabled,
-        hashed_password=hashed_password
-    )
-    db_user = User.validate(db_user)
+    extra_data = {"hashed_password": hashed_password}
+    db_user = User.model_validate(user, update=extra_data)
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
@@ -39,7 +31,7 @@ def create_user(user: UserReg, session: SessionDep) -> User:
 
 @router.get("/users/me/", response_model=User)
 async def read_users_me(
-        current_user: Annotated[User, Depends(get_current_active_user)],
+        current_user: Annotated[User, Depends(get_current_user)],
     ):
     return current_user
 
