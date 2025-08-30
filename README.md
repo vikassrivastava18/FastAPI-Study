@@ -1,1 +1,1 @@
-Learning FastAPI: Project structure along with security, routing. etc in FastAPI.
+Learning how to structure a project along with security, routing. etc in FastAPI.
