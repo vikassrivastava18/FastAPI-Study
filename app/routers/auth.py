@@ -3,11 +3,10 @@ from fastapi import APIRouter
 from typing import Annotated
 
 from fastapi import Depends
-from utils.auth_utils import UserReg, get_current_user
+from utils.auth_utils import UserReg, get_current_user, get_password_hash
 
 from dependencies import SessionDep
 from database import  User
-
 
 
 router = APIRouter(

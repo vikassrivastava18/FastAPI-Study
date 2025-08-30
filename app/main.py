@@ -20,7 +20,7 @@ def on_startup():
     create_db_and_tables()
 
 app.include_router(auth.router)
-app.include_router(web.router)
+app.include_router(web.router, include_in_schema=False)
 
 
 @app.get("/")
@@ -50,18 +50,6 @@ async def login_for_access_token(
         response.status_code = status.HTTP_303_SEE_OTHER
         return response
     return Token(access_token=access_token, token_type="bearer")
-
-
-
-
-# {
-#   "username": "ram",
-#   "email": "string",
-#   "full_name": "string",
-#   "disabled": true,
-#   "password": "ram@1234"
-# }
-
 
 
 
