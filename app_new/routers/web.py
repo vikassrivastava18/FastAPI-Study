@@ -3,9 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
-from .utils.auth_utils import get_password_hash, \
-    Token, authenticate_user, create_access_token
-from .utils.auth_utils import get_current_user_web
+from utils.auth_utils import (Token,
+                              authenticate_user,
+                              create_access_token,
+                              get_current_user_web)
+
 from dependencies import SessionDep
 from database import User as UserModel
 from config import ACCESS_TOKEN_EXPIRE_MINUTES

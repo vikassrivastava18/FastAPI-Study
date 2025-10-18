@@ -1,14 +1,14 @@
 from typing import Annotated
+from config import ACCESS_TOKEN_EXPIRE_MINUTES
 
 from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import Response
 
-from .utils.auth_utils import UserReg, get_password_hash, \
+from utils.auth_utils import UserReg, get_password_hash, \
     Token, authenticate_user, create_access_token
 from dependencies import SessionDep
 from database import  User
-from config import ACCESS_TOKEN_EXPIRE_MINUTES
+
 from dependencies import SessionDep
 
 

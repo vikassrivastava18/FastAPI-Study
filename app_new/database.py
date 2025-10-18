@@ -16,7 +16,6 @@ from sqlmodel import (
     SQLModel,
     Session,
     Field)
-
 """
 Define the database path
 """
