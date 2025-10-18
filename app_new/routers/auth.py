@@ -23,7 +23,9 @@ router = APIRouter(
 )
 
 @router.post("/create-user/")
-def create_user(user: UserReg, session: SessionDep) -> User:
+def create_user(user: UserReg, 
+                session: SessionDep
+                ) -> User:
     hashed_password = get_password_hash(user.password)
     extra_data = {"hashed_password": hashed_password}
     db_user = User.model_validate(user, update=extra_data)

@@ -47,7 +47,8 @@ async def login_for_access_token(
 
 
 @router.get("/")
-async def home(user: Annotated[UserModel, Depends(get_current_user_web)]):
+async def home(user: Annotated[UserModel,
+               Depends(get_current_user_web)]):
     return HTMLResponse(content=open("templates/heroes.html").read())
 
 

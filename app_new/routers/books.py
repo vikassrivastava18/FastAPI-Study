@@ -12,23 +12,28 @@ router = APIRouter(
     responses={404: {"description": "Not Found"}}
 )
 
+
 # Create a new book
 @router.post("/books")
-def register_book(book: BookRegister, session: SessionDep):
+def register_book(book: BookRegister, 
+                  session: SessionDep) -> Book:
     new_book = Book.model_validate(book)
     session.add(new_book)
     session.commit()
     session.refresh(new_book)
     return new_book
 
+
 # Get the list of all books
 @router.get("/books")
 def book_list(sesion: SessionDep):
     return sesion.query(Book).all()
 
+
 # Delete an existing book
 @router.delete("/book/{book_id}")
-def delete_book(book_id: int, session: SessionDep):
+def delete_book(book_id: int, 
+                session: SessionDep):
     book = session.query(Book).filter(Book.id == book_id).first()
     if not book:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
@@ -39,7 +44,9 @@ def delete_book(book_id: int, session: SessionDep):
 
 # Update an existing book
 @router.patch("/book/{book_id}")
-def update_book(book_id: int, book: BookRegister, session: SessionDep):
+def update_book(book_id: int, 
+                book: BookRegister, 
+                session: SessionDep) -> Book:
     # Update an existing book by lookup with id and update book name
     updated_book = Book.model_validate(book)
     existing_book = session.query(Book).filter(Book.id == book_id).first()
