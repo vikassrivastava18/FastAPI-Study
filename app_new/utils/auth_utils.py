@@ -13,11 +13,11 @@ from sqlmodel import select
 
 from dependencies import SessionDep
 from config import ALGORITHM, SECRET_KEY
-from database import User as UserModel
+from database.database import User as UserModel
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 """
 Returns the hashed password
@@ -29,7 +29,7 @@ class UserReg(BaseModel):
     username: str
     email: str | None = None
     full_name: str | None = None
-    disabled: bool | None = None
+    disabled: bool | None = False
     password: str = Field(..., min_length=8)
 
 
@@ -46,6 +46,40 @@ def get_user(username: str, session: SessionDep):
     statement = select(UserModel).where(UserModel.username == username)
     user = session.exec(statement).first()
     return user
+
+
+# Token based authentication validation
+async def get_current_user(
+        request: Request,
+        token: Annotated[str, Depends(oauth2_scheme)],
+        session: SessionDep
+):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except InvalidTokenError:
+        raise credentials_exception
+
+    # Get user from database
+    statement = select(UserModel).where(UserModel.username == username)
+    user = session.exec(statement).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+async def get_current_active_user(
+    current_user: Annotated[UserModel, Depends(get_current_user)]
+):
+    if current_user.disable:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
 
 
 async def get_current_user_web(request: Request, session: SessionDep):

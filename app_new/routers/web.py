@@ -9,7 +9,7 @@ from utils.auth_utils import (Token,
                               get_current_user_web)
 
 from dependencies import SessionDep
-from database import User as UserModel
+from database.database import User as UserModel
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
 
 router = APIRouter(
@@ -56,22 +56,6 @@ async def login_user():
     return HTMLResponse(content=open("templates/login.html").read())
 
 
-@router.get("/{item_id}")
-async def read_item(item_id: str, user: Annotated[UserModel, Depends(get_current_user_web)]):
-    if item_id not in fake_items_db:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return {"name": fake_items_db[item_id]["name"], "item_id": item_id}
 
-
-@router.put(
-    "/{item_id}",
-    responses={403: {"description": "Operation forbidden"}},
-)
-async def update_item(item_id: str):
-    if item_id != "plumbus":
-        raise HTTPException(
-            status_code=403, detail="You can only update the item: plumbus"
-        )
-    return {"item_id": item_id, "name": "The great Plumbus"}
 
 

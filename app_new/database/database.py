@@ -10,12 +10,14 @@
         - create_db_and_tables: Creates database tables based on defined models.
         - get_session: Dependency function to yield a database session for use in FastAPI routes.
 """
+from datetime import datetime
 
 from sqlmodel import (
     create_engine,
     SQLModel,
     Session,
     Field)
+
 """
 Define the database path
 """
@@ -36,14 +38,28 @@ class User(SQLModel, table=True):
     full_name: str = Field()
     email: str | None = Field(unique=True)
     hashed_password: str = Field()
-    disabled: bool = Field(default=False)
+    admin: bool = Field(default=False)
+    disable: bool = Field(default=False)
 
-
-class Hero(SQLModel, table=True):
+class Book(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(index=True)
-    age: int | None = Field(default=None, index=True)
-    secret_name: str
+    name: str = Field(unique=True)
+    uploaded_on: datetime = Field(default=datetime.now())
+
+class Chapter(SQLModel, table=True):
+    id: int = Field(primary_key=True)
+    name: str = Field()
+    book_id: int = Field(foreign_key="book.id")
+
+class SubChapter(SQLModel, table=True):
+    id: int = Field(primary_key=True)
+    name: str = Field()
+    chapter_id: int = Field(foreign_key="chapter.id")
+
+class Text(SQLModel, table=True):
+    id: int = Field(primary_key=True)
+    subchapter_id: int = Field(foreign_key="subchapter.id")
+    text: str = Field()
 
 
 def create_db_and_tables():

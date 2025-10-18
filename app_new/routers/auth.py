@@ -2,21 +2,22 @@ from typing import Annotated
 from config import ACCESS_TOKEN_EXPIRE_MINUTES
 
 from fastapi import Depends, HTTPException, status, APIRouter
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
-from utils.auth_utils import UserReg, get_password_hash, \
-    Token, authenticate_user, create_access_token
+from utils.auth_utils import (UserReg,
+                              get_password_hash,
+                              Token, 
+                              authenticate_user,
+                              create_access_token,
+                              oauth2_scheme)
+
 from dependencies import SessionDep
-from database import  User
+from database.database import  User
 
-from dependencies import SessionDep
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 router = APIRouter(
     prefix="/auth",
-    tags=["authentication"],
+    tags=["Authentication"],
     # dependencies=[Depends(get_token_header)],
     responses={404: {"description": "Not found"}},
 )
