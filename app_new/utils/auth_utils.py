@@ -1,12 +1,12 @@
 
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
-from fastapi import HTTPException, Request
-import jwt
+import jwt, re
 from jwt.exceptions import InvalidTokenError
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
-from fastapi import Depends, status, Security
+from fastapi import HTTPException, Request
+from fastapi import Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlmodel import select
@@ -25,12 +25,56 @@ Returns the hashed password
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def validate_password_strength(password: str):
+    """
+    Validate password complexity.
+    Raise HTTPException if invalid.
+    """
+    if len(password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long."
+        )
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one uppercase letter."
+        )
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one lowercase letter."
+        )
+    if not re.search(r"[0-9]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one number."
+        )
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one special character."
+        )
+
+    weak_passwords = {"123456", "password", "qwerty", "admin", "letmein"}
+    if password.lower() in weak_passwords:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password is too common. Choose a stronger one."
+        )
+
+
 class UserReg(BaseModel):
-    username: str
-    email: str | None = None
+    username: str = Field(..., min_length=3, max_length=30)
+    email: EmailStr 
     full_name: str | None = None
     disabled: bool | None = False
-    password: str = Field(..., min_length=8)
+    password: str = Field(..., min_length=6)
 
 
 class Token(BaseModel):
@@ -104,10 +148,6 @@ async def get_current_user_web(request: Request, session: SessionDep):
     if user is None:
         raise credentials_exception
     return user
-
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
 
 
 def authenticate_user(username: str, password: str, session: SessionDep):

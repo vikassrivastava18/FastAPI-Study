@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from fastapi import HTTPException, status
+
 from utils.book_utils import BookRegister
 from database.database import Book
 from dependencies import SessionDep
@@ -15,7 +16,7 @@ router = APIRouter(
 
 # Create a new book
 @router.post("/books")
-def register_book(book: BookRegister, 
+async def register_book(book: BookRegister, 
                   session: SessionDep) -> Book:
     new_book = Book.model_validate(book)
     session.add(new_book)
@@ -26,13 +27,13 @@ def register_book(book: BookRegister,
 
 # Get the list of all books
 @router.get("/books")
-def book_list(sesion: SessionDep):
+async def book_list(sesion: SessionDep):
     return sesion.query(Book).all()
 
 
 # Delete an existing book
 @router.delete("/book/{book_id}")
-def delete_book(book_id: int, 
+async def delete_book(book_id: int, 
                 session: SessionDep):
     book = session.query(Book).filter(Book.id == book_id).first()
     if not book:
@@ -44,7 +45,7 @@ def delete_book(book_id: int,
 
 # Update an existing book
 @router.patch("/book/{book_id}")
-def update_book(book_id: int, 
+async def update_book(book_id: int, 
                 book: BookRegister, 
                 session: SessionDep) -> Book:
     # Update an existing book by lookup with id and update book name

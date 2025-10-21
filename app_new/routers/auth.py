@@ -1,38 +1,65 @@
 from typing import Annotated
-from config import ACCESS_TOKEN_EXPIRE_MINUTES
+from pydantic_core import PydanticCustomError
+from pydantic import EmailStr, ValidationError
 
-from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi import (Depends,
+                     HTTPException, 
+                     status, 
+                     APIRouter,
+                     Form)
 from fastapi.security import OAuth2PasswordRequestForm
 
-from utils.auth_utils import (UserReg,
-                              get_password_hash,
+from utils.auth_utils import (get_password_hash,
                               Token, 
                               authenticate_user,
                               create_access_token,
-                              oauth2_scheme)
+                              oauth2_scheme,
+                              validate_password_strength)
 
 from dependencies import SessionDep
 from database.database import  User
+from config import ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
-    # dependencies=[Depends(get_token_header)],
     responses={404: {"description": "Not found"}},
 )
 
 @router.post("/create-user/")
-def create_user(user: UserReg, 
-                session: SessionDep
-                ) -> User:
-    hashed_password = get_password_hash(user.password)
-    extra_data = {"hashed_password": hashed_password}
-    db_user = User.model_validate(user, update=extra_data)
-    session.add(db_user)
+async def create_user(
+    session: SessionDep,
+    username: str = Form(...),
+    fullname: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+) -> User:
+    
+    # Check uniqueness of Username and Password
+    if session.query(User).filter(User.username == username).first():
+        raise HTTPException(status_code=400, detail="Username already exists")
+    if session.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+    
+    # Validate password strength
+    validate_password_strength(password)
+
+    # ✅ Validate email using Pydantic EmailStr
+    try:
+        EmailStr._validate(email)
+    except PydanticCustomError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email format. Please enter a valid email like name@example.com"
+        )
+
+    hashed_password = get_password_hash(password)
+    new_user = User(username=username, full_name=fullname, email=email, hashed_password= hashed_password)
+    session.add(new_user)
     session.commit()
-    session.refresh(db_user)
-    return db_user
+    session.refresh(new_user)
+    return new_user
 
 
 @router.post("/token")
@@ -47,6 +74,7 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=ACCESS_TOKEN_EXPIRE_MINUTES
     )
