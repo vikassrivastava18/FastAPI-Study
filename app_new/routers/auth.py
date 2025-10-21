@@ -1,6 +1,6 @@
 from typing import Annotated
 from pydantic_core import PydanticCustomError
-from pydantic import EmailStr, ValidationError
+from pydantic import EmailStr
 
 from fastapi import (Depends,
                      HTTPException, 
@@ -27,6 +27,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+"""New user creation after validating the inputs"""
 @router.post("/create-user/")
 async def create_user(
     session: SessionDep,
@@ -35,7 +36,6 @@ async def create_user(
     email: str = Form(...),
     password: str = Form(...),
 ) -> User:
-    
     # Check uniqueness of Username and Password
     if session.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -61,7 +61,7 @@ async def create_user(
     session.refresh(new_user)
     return new_user
 
-
+"""Create and return token after validation"""
 @router.post("/token")
 async def login_for_access_token(
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -82,5 +82,7 @@ async def login_for_access_token(
 
 
 @router.get("/secure-endpoint")
-async def secure_endpoint(token: str = Depends(oauth2_scheme)):
+async def secure_endpoint(
+    token: str = Depends(oauth2_scheme)
+    ):
     return {"token": token}

@@ -10,11 +10,12 @@ Instantiate a FastAPI app object, which you use to define routes and run your AP
 """
 app = FastAPI()
 
-
+"""Create the database and tables"""
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
 
+"""Configute all the routes"""
 app.include_router(auth.router)
 app.include_router(web.router, include_in_schema=False)
 app.include_router(books.router)

@@ -15,13 +15,11 @@ from config import ACCESS_TOKEN_EXPIRE_MINUTES
 router = APIRouter(
     prefix="/web",
     tags=["web"],
-    # dependencies=[Depends(get_current_active_user)],
     responses={404: {"description": "Not found"}},
 )
 
-fake_items_db = {"plumbus": {"name": "Plumbus"}, "gun": {"name": "Portal Gun"}}
 
-
+"""Create access token for the web"""
 @router.post("/token")
 async def login_for_access_token(
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -46,12 +44,15 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
+"""Home page, accessible only to authenticated users."""
 @router.get("/")
 async def home(user: Annotated[UserModel,
-               Depends(get_current_user_web)]):
+               Depends(get_current_user_web)]
+               ):
     return HTMLResponse(content=open("templates/heroes.html").read())
 
 
+"""Login page"""
 @router.get("/login")
 async def login_user():
     return HTMLResponse(content=open("templates/login.html").read())
